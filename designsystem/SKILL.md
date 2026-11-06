@@ -1,0 +1,280 @@
+---
+name: designsystem
+description: Scaffolds a new design system project from scratch — creates the folder structure, generates a tailored component brief, a visual foundations spec, and a progress tracker. Embeds Emil Kowalski's design engineering philosophy (animation decisions, component polish, performance rules) into every generated document so all future sessions apply them automatically. Only runs when explicitly invoked; it does not trigger on its own.
+---
+
+# Design System Bootstrap
+
+A setup skill. It does ONE thing: take a product brief and visual references, then produce the scaffolding and specification documents that make a design system project coherent from day one — a living component brief, a progress tracker, and a clear foundation to build from.
+
+**Motion and polish rules come from Emil Kowalski's `emil-design-eng` skill.** They are embedded in every document this skill generates, so components and screens built later automatically apply the same craft bar without loading the skill separately.
+
+## Operating Posture
+
+You are a senior design engineer setting up a new design system. The goal of this skill is not to build anything yet — it is to create the right **foundation**: a brief that is specific enough to make future decisions obvious, a component inventory that reflects what this product actually needs (not a generic checklist), and a structure that another agent (or you, next session) can pick up and continue without losing context.
+
+A good brief from this skill should answer, without ambiguity: what does this product do, who uses it, what is the visual language, and which components are needed first.
+
+## Hard Rules
+
+1. **Never start building until the brief is confirmed.** The purpose of this skill is scaffolding, not implementation. If the user wants to start building immediately, hand off to `/ds-component` or `/ds-screen`.
+2. **The component inventory must be product-specific.** Do not copy-paste a generic list. Derive platform-specific components from the brief — an AI chat product needs a prompt field and message bubbles; a fintech needs transaction cards and balance meters.
+3. **Visual language must be derived from references.** If no references are provided, ask. A design system without a visual direction produces inconsistent components.
+4. **Status tracking from the start.** Generate a `STATUS.md` checklist at setup time. Future sessions use it to know what is done and what is next.
+
+## Workflow
+
+### Phase 1 — Collect the brief
+
+Ask the user for the following **in a single message**:
+
+1. **Project name** — the name of the product or design system
+2. **Product brief** — 2–5 sentences: what it is, who uses it, the visual tone or style direction you have in mind
+3. **Visual references** — links (Figma, Dribbble, Behance, product sites) and/or a path to a local folder with reference images. If nothing yet, say so.
+
+Wait for the reply before proceeding.
+
+### Phase 2 — Generate the folder structure
+
+Create the following structure in the current working directory (or a `{project-name}/` subfolder if the directory is not empty):
+
+```
+{project-name}/
+├── CLAUDE.md
+├── STATUS.md
+└── design-system/
+    ├── PROMPT.md
+    └── references/
+        └── .gitkeep
+```
+
+### Phase 3 — Write CLAUDE.md
+
+A concise context file for future sessions. Include:
+
+- Project name and brief (1–3 sentences)
+- Stack: HTML + CSS + JS as default; Next.js + Tailwind + shadcn/ui if the user specifies a framework
+- Design system conventions:
+  - Dark mode as default
+  - CSS custom properties for all tokens (`--color-*`, `--spacing-*`, `--radius-*`, `--font-*`, `--ease-*`)
+  - Components must be reusable and composable — never single-use
+  - Required states: default, hover, focus-visible, disabled; add loading and error where applicable
+  - Realistic content in examples, no placeholder text
+  - WCAG AA contrast minimum
+  - Motion rules (from `emil-design-eng`): never animate keyboard actions; UI cap 300ms; ease-out for entrances; only `transform`/`opacity`; `prefers-reduced-motion` required; easing tokens: `--ease-out: cubic-bezier(0.23,1,0.32,1)`, `--ease-in-out: cubic-bezier(0.77,0,0.175,1)`, `--ease-drawer: cubic-bezier(0.32,0.72,0,1)`
+- Visual references list (links or folder path)
+
+### Phase 4 — Write STATUS.md
+
+A flat checklist the user will update across sessions. Structure:
+
+```markdown
+# {project-name} — Design System Status
+
+**Created:** {date}
+**Status:** 🔵 In progress
+
+---
+
+## Visual Foundations
+- [ ] Color palette (background, surface, text, border, action, feedback)
+- [ ] Typography (headings, body, captions, labels, code)
+- [ ] Spacing scale
+- [ ] Border radii
+- [ ] Shadows
+- [ ] Icons
+- [ ] CSS design tokens
+
+## Core Components
+- [ ] Buttons (primary, secondary, ghost, destructive, icon)
+- [ ] Inputs (text, password, search, textarea)
+- [ ] Select, Checkbox, Radio, Switch, Slider
+- [ ] Avatar (single and group)
+- [ ] Badges (category and status)
+- [ ] Tooltip, Dropdown menu, Accordion
+- [ ] Alert, Toast, Modal, Drawer
+- [ ] Tabs, Breadcrumbs, Pagination
+
+## Platform Components
+{product-specific component checklist derived from the brief}
+
+## Catalog Page
+- [ ] Foundations section
+- [ ] Core components section
+- [ ] Platform components section
+```
+
+For **Platform Components**: derive from the brief. An AI chat product gets: Prompt field, Model selector, Conversation messages, Generation indicator, Code block, Source card, Prompt chips, Generated image card, Upload area, Agent card, Task step, Approval request, Credit meter, Command palette, Empty states. A design tool gets different ones. A fintech gets different ones again. Never use a generic list.
+
+### Phase 5 — Write design-system/PROMPT.md
+
+The main brief document that an agent will read at the start of every work session. Structure:
+
+```markdown
+# Design System Brief — {project-name}
+
+Build a reusable component library for {project-name}, {product description}.
+
+Attach visual references before starting. Use them to define the color palette, typography, spacing, borders, icons, and component style. Turn the references into a single, consistent visual language.
+
+In this phase, build the library and its catalog page. Product screens come later, assembled from these pieces.
+
+---
+
+## VISUAL FOUNDATIONS
+
+Define and document:
+- Background, surface, text, border, action, and feedback colors
+- Typography for headings, body, captions, labels, and code
+- Spacing scale, border radii, and shadows
+- Consistent icon style
+
+Organize these values as reusable CSS custom properties.
+
+---
+
+## CORE COMPONENTS
+
+Build:
+- Buttons: primary, secondary, ghost, destructive, icon button
+- Inputs: text, password, search, textarea
+- Select, Checkbox, Radio, Switch, Slider
+- Avatar (single and group)
+- Badges (category and status)
+- Tooltip, Dropdown menu, Accordion
+- Alert, Toast, Modal, Drawer
+- Tabs, Breadcrumbs, Pagination
+
+---
+
+## PLATFORM COMPONENTS
+
+Build:
+{product-specific components, one per line, with a short description of behavior}
+
+---
+
+## BUILD RULES
+
+Use the same foundations across all components.
+Build larger components by composing smaller ones.
+
+Include applicable states: default, hover, focus, selected, disabled, loading, error.
+Ensure readable contrast and correct behavior with long text and on small screens.
+
+Use realistic content in all examples — no lorem ipsum.
+
+If working in code: build reusable components and make interactions work. Simulate AI responses and generation processes without relying on external APIs.
+
+If working in Figma: use components, variants, properties, and auto layout.
+
+---
+
+## MOTION & POLISH
+
+Apply Emil Kowalski's principles to every component and screen.
+
+### Easing tokens (required on :root)
+```css
+--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+```
+
+### Animation decision
+Before any animation, ask: how often will users see this?
+- 100+/day (keyboard shortcuts, command palette): no animation, ever
+- Tens/day (hover, list navigation): remove or drastically reduce
+- Occasional (modals, drawers, toasts): standard animation
+- Rare / first-time (onboarding, celebrations): can add delight
+
+### Duration
+- Button press feedback: 100–160ms
+- Tooltips, small popovers: 125–200ms
+- Dropdowns, selects: 150–250ms
+- Modals, drawers: 200–500ms
+- Never exceed 300ms for everyday UI
+
+### Easing
+- **Entering** → `var(--ease-out)` — starts fast, feels responsive
+- **On-screen movement** → `var(--ease-in-out)` — natural acceleration
+- **Hover / color** → `ease`
+- **Constant motion** → `linear`
+- **Never `ease-in` in UI** — starts slow, makes interface feel sluggish
+
+### Per-component rules
+- **Button:** `transform: scale(0.97)` on `:active`, `transition: transform 160ms var(--ease-out)`
+- **Popover / dropdown:** `transform-origin` from the trigger. Use `var(--transform-origin)` (Base UI). Modal stays `transform-origin: center`
+- **Tooltip:** initial delay on first open; subsequent hovers skip delay and animation (`transition-duration: 0ms`)
+- **Toast:** CSS transitions (not keyframes) for interruptibility. Exit should be faster than enter
+- **Drawer:** use `var(--ease-drawer)` for the iOS-like curve
+- **Lists:** stagger 30–80ms between items. Never block interaction during stagger
+
+### Element entry
+```css
+/* Never */
+.entering { transform: scale(0); }
+
+/* Always */
+.entering { transform: scale(0.95); opacity: 0; }
+
+/* Modern CSS */
+@starting-style { opacity: 0; transform: translateY(8px); }
+```
+
+### Performance
+- Animate only `transform` and `opacity` — never `width`, `height`, `padding`, `margin`
+- CSS transitions > keyframes for dynamic, interruptible UI
+- For programmatic animations: WAAPI (`element.animate()`) — hardware-accelerated, no library
+- `prefers-reduced-motion`: keep opacity/color, remove movement
+- Hover states behind `@media (hover: hover) and (pointer: fine)` only
+
+---
+
+## CATALOG PAGE
+
+Organize the library into a catalog page divided into:
+Foundations, Core Components, and Platform Components.
+
+Show each component's name, variants, and states.
+The page should let you compare pieces and serve as a reference for building screens in future phases.
+```
+
+Adapt **Platform Components** to this product specifically.
+
+### Phase 6 — Confirm
+
+Reply with:
+
+```
+{project-name} scaffolded.
+
+  CLAUDE.md              — project context for future sessions
+  STATUS.md              — component checklist to track progress
+  design-system/
+    PROMPT.md            — the main brief to open every work session
+    references/          — drop your visual references here
+
+──────────────────────────────────────────
+Recommended workflow (run skills in this order):
+
+  /ds-tokens      → design the token architecture before any component
+                    (primitive → semantic layers, dark mode, Emil's motion tokens)
+
+  /ds-component   → build each component using the established tokens
+
+  /ds-audit       → audit components: tokens, states, motion, accessibility
+                    (Before/After table output, prioritized by impact)
+
+  /ds-docs        → document each component
+                    (when to use, props, ARIA, keyboard, do/don't)
+
+  /ds-screen      → assemble full screens from the system's pieces
+
+  /ds-status      → track and update progress across sessions
+──────────────────────────────────────────
+```
+
+Then offer: **"Ready to start now? I can run `/ds-tokens` to design the token architecture before any component."**
+
+If yes, execute the `ds-tokens` skill immediately in the same session.
