@@ -63,7 +63,11 @@ Wait for the reply.
 
 **Output format:**
 - The component file: `components/ui/{name}.tsx` for core primitives, `components/platform/{name}.tsx` for product-specific components. Typed props, variants via `cva`, interactions functional.
-- A catalog entry in `app/page.tsx` showing all variants and states side by side.
+- A catalog entry in `app/page.tsx`, inside the existing catalog shell: a `CatalogSection` (from `components/catalog/catalog-section.tsx`) showing all variants and states side by side, followed by short usage notes. If the section already exists with an empty state, replace the empty state.
+- A matching item in `components/catalog/nav.ts` — same `id` as the `CatalogSection` — under the right group (Core components, or the product-area group of a platform component). Never leave a section out of the sidebar.
+- Check it in both themes: the catalog toggle must switch it cleanly between dark and light.
+
+If the project has no `components/catalog/` (made before the catalog shell existed), build the shell first as described in Phase 7 of `/designsystem`, then add the component.
 
 ### Phase 4 — Update STATUS.md
 

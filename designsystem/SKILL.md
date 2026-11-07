@@ -17,11 +17,12 @@ A good brief from this skill should answer, without ambiguity: what does this pr
 
 ## Hard Rules
 
-1. **Run the whole flow without stopping.** After the brief is collected (Phase 1), execute every phase through to the end — scaffold, documents, tokens, build check — with no confirmation questions, no "shall I continue?", no waiting for files. Make reasonable decisions on your own and list them in the final summary; the user reviews and changes things once everything is ready. The only valid reasons to stop are a missing project name/brief or a command that fails.
+1. **Run the whole flow without stopping.** After the brief is collected (Phase 1), execute every phase through to the end — scaffold, documents, tokens, catalog shell, build check — with no confirmation questions, no "shall I continue?", no waiting for files. Make reasonable decisions on your own and list them in the final summary; the user reviews and changes things once everything is ready. The only valid reasons to stop are a missing project name/brief or a command that fails.
 2. **The component inventory must be product-specific.** Do not copy-paste a generic list. Derive platform-specific components from the brief — an AI chat product needs a prompt field and message bubbles; a fintech needs transaction cards and balance meters.
 3. **Visual language comes from references when they exist, from the brief when they don't.** Use links, images and the tone described in the brief. If there are no references, infer a coherent direction from the brief and record it as an assumption in the final summary — never stop to ask.
 4. **Status tracking from the start.** Generate a `STATUS.md` checklist at setup time. Future sessions use it to know what is done and what is next.
 5. **The stack is always Next.js.** Every design system is built in Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui. Do not ask the user to choose a stack and do not fall back to plain HTML/CSS/JS.
+6. **The catalog always has the same shell.** Every project ships with the catalog built in Phase 7: a sticky sidebar with grouped navigation (a drawer on mobile), a header with the project name, version and a dark/light theme toggle, and anchored sections. This is not optional and not left for "later" — the user must be able to open `npm run dev`, switch themes and navigate the whole system on day one.
 
 ## Workflow
 
@@ -61,10 +62,11 @@ Then add the design system files, so the project ends up as:
 ├── app/
 │   ├── globals.css        ← token source of truth (filled by /ds-tokens)
 │   ├── layout.tsx
-│   └── page.tsx           ← catalog page
+│   └── page.tsx           ← catalog page (built in Phase 7)
 ├── components/
 │   ├── ui/                ← shadcn/ui primitives, restyled with tokens
-│   └── platform/          ← product-specific components
+│   ├── platform/          ← product-specific components
+│   └── catalog/           ← catalog shell: sidebar, header, theme toggle, sections
 ├── lib/utils.ts           ← cn()
 └── design-system/
     ├── PROMPT.md
@@ -93,7 +95,7 @@ A concise context file for future sessions. Include:
   - Components use only token-backed Tailwind classes — no arbitrary values (`bg-[#...]`, `p-[13px]`), no default palette (`bg-blue-500`)
   - shadcn/ui for primitives — restyle them with the system's tokens, never rebuild them from scratch
   - Components in `components/ui/` (primitives) and `components/platform/` (product-specific)
-  - Catalog page at `app/page.tsx`
+  - Catalog page at `app/page.tsx`, inside the shell in `components/catalog/` (sidebar + header with theme toggle). Navigation lives in `components/catalog/nav.ts` — every new component or screen gets an entry there
   - `cn()` for conditional classes, `next/image` for images, functional components + hooks only
 - Design system conventions:
   - Dark mode as default
@@ -140,7 +142,8 @@ A flat checklist the user will update across sessions. Structure:
 {product-specific component checklist derived from the brief}
 
 ## Catalog Page
-- [ ] Foundations section
+- [x] Shell: sidebar navigation, header, dark/light toggle
+- [x] Foundations section
 - [ ] Core components section
 - [ ] Platform components section
 ```
@@ -274,11 +277,14 @@ Before any animation, ask: how often will users see this?
 
 ## CATALOG PAGE
 
-Build the catalog at `app/page.tsx` and divide it into:
-Foundations, Core Components, and Platform Components.
+The catalog lives at `app/page.tsx`, inside the shell in `components/catalog/`:
+- Sticky sidebar with grouped navigation (drawer on mobile), highlighting the section in view
+- Header with the project name, version and a dark/light theme toggle
+- Groups in this order: Foundations → Core Components → one group per product area → Screens
 
-Show each component's name, variants, and states.
-The page should let you compare pieces and serve as a reference for building screens in future phases.
+Every piece gets an anchored section (`CatalogSection`) and an entry in `components/catalog/nav.ts`.
+Show each component's name, variants, and states, followed by short usage notes.
+The page should let you compare pieces, in both themes, and serve as a reference for building screens.
 ```
 
 Adapt **Platform Components** to this product specifically.
@@ -287,11 +293,248 @@ Adapt **Platform Components** to this product specifically.
 
 Without asking, execute the `ds-tokens` skill immediately in the same session, using the brief and references already collected. Skip its own questions — everything it needs is in `CLAUDE.md` and `PROMPT.md`.
 
-### Phase 7 — Verify
+### Phase 7 — Build the catalog shell
+
+Always build this — it is the fixed pattern of every design system made with this skill. Write all UI copy (nav labels, section titles, descriptions, aria-labels) in the language of the brief.
+
+```bash
+npx shadcn@latest add button sheet
+```
+
+**`components/catalog/nav.ts`** — the single source of the sidebar. Item `id`s are the anchors of the sections; items with `href` point to routes (screens).
+
+```ts
+export type CatalogNavItem = { id: string; label: string; href?: string };
+export type CatalogNavGroup = { label: string; items: CatalogNavItem[] };
+
+export const catalogNav: CatalogNavGroup[] = [
+  {
+    label: "Foundations",
+    items: [
+      { id: "brand", label: "Brand" },
+      { id: "color", label: "Color" },
+      { id: "typography", label: "Typography" },
+      { id: "space-shape", label: "Space & shape" },
+      { id: "icons", label: "Icons" },
+      { id: "motion", label: "Motion" },
+    ],
+  },
+  {
+    label: "Core components",
+    items: [
+      { id: "buttons", label: "Buttons" },
+      { id: "inputs", label: "Inputs" },
+      { id: "selection", label: "Selection" },
+      { id: "avatar-badges", label: "Avatar & badges" },
+      { id: "menus-modals", label: "Menus & modals" },
+      { id: "alerts-toasts", label: "Alerts & toasts" },
+      { id: "navigation", label: "Navigation" },
+      { id: "progress", label: "Progress" },
+    ],
+  },
+  // One group per product area from the brief (e.g. "Landing page", "Patient area",
+  // "Team dashboard", "AI assistant"), listing the platform components of STATUS.md.
+  // { label: "Screens", items: [] } — /ds-screen adds { id, label, href } entries here.
+];
+
+export const catalogSectionIds = catalogNav.flatMap((group) =>
+  group.items.filter((item) => !item.href).map((item) => item.id),
+);
+```
+
+**`components/catalog/theme-toggle.tsx`** — swaps icons with the `dark:` variant, so it needs no `mounted` state and never mismatches on hydration.
+
+```tsx
+"use client";
+
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+
+export function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label="Toggle dark/light theme"
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+    >
+      <Sun className="size-4 dark:hidden" aria-hidden />
+      <Moon className="hidden size-4 dark:block" aria-hidden />
+    </Button>
+  );
+}
+```
+
+**`components/catalog/catalog-shell.tsx`** — header + sticky sidebar on desktop, drawer on mobile, active-section highlight.
+
+```tsx
+"use client";
+
+import { useEffect, useState, type ReactNode } from "react";
+import { Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import { catalogNav, catalogSectionIds } from "./nav";
+import { ThemeToggle } from "./theme-toggle";
+
+function useActiveSection(): string {
+  const [active, setActive] = useState(catalogSectionIds[0] ?? "");
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.find((entry) => entry.isIntersecting);
+        if (visible) setActive(visible.target.id);
+      },
+      { rootMargin: "-20% 0px -70% 0px" },
+    );
+    for (const id of catalogSectionIds) {
+      const element = document.getElementById(id);
+      if (element) observer.observe(element);
+    }
+    return () => observer.disconnect();
+  }, []);
+
+  return active;
+}
+
+function CatalogNav({ active, onNavigate }: { active: string; onNavigate?: () => void }) {
+  return (
+    <nav aria-label="Design system" className="flex flex-col gap-6">
+      {catalogNav.map((group) => (
+        <div key={group.label} className="flex flex-col gap-1">
+          <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-text-secondary">
+            {group.label}
+          </p>
+          {group.items.map((item) => (
+            <a
+              key={item.id}
+              href={item.href ?? `#${item.id}`}
+              onClick={onNavigate}
+              aria-current={active === item.id ? "location" : undefined}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-sm text-text-secondary transition-colors hover:bg-surface-hover hover:text-text-primary focus-visible:outline-2 focus-visible:outline-border-focus",
+                active === item.id && "bg-surface-active text-text-primary",
+              )}
+            >
+              {item.label}
+            </a>
+          ))}
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+export function CatalogShell({
+  name,
+  version,
+  children,
+}: {
+  name: string;
+  version: string;
+  children: ReactNode;
+}) {
+  const active = useActiveSection();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="flex h-dvh flex-col bg-bg-base text-text-primary">
+      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border-default px-4 lg:px-6">
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger
+            render={<Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation" />}
+          >
+            <Menu className="size-4" aria-hidden />
+          </SheetTrigger>
+          <SheetContent side="left" className="w-72 overflow-y-auto p-4">
+            <SheetTitle className="sr-only">Navigation</SheetTitle>
+            <CatalogNav active={active} onNavigate={() => setOpen(false)} />
+          </SheetContent>
+        </Sheet>
+        <span className="truncate font-semibold">{name}</span>
+        <span className="shrink-0 rounded-full border border-border-default px-2 py-0.5 text-xs text-text-secondary">
+          Design System v{version}
+        </span>
+        <div className="ml-auto">
+          <ThemeToggle />
+        </div>
+      </header>
+      <div className="flex min-h-0 flex-1">
+        <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-border-default p-4 lg:block">
+          <CatalogNav active={active} />
+        </aside>
+        <main className="min-w-0 flex-1 overflow-y-auto scroll-smooth px-4 py-10 motion-reduce:scroll-auto lg:px-10">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+```
+
+`shadcn init` installs Base UI primitives by default, which compose through the `render` prop. If the project's `sheet` is built on Radix instead (`@radix-ui/react-dialog`), use `<SheetTrigger asChild><Button …><Menu … /></Button></SheetTrigger>`.
+
+**`components/catalog/catalog-section.tsx`** — server components for groups and anchored sections.
+
+```tsx
+import type { ReactNode } from "react";
+
+export function CatalogGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="mx-auto max-w-5xl pb-16">
+      <h2 className="pb-8 text-3xl font-semibold tracking-tight">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+export function CatalogSection({
+  id,
+  title,
+  description,
+  children,
+}: {
+  id: string;
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      aria-labelledby={`${id}-title`}
+      className="scroll-mt-6 border-b border-border-default py-12 first:pt-0 last:border-0"
+    >
+      <h3 id={`${id}-title`} className="text-xl font-semibold">{title}</h3>
+      {description && <p className="mt-1 max-w-prose text-sm text-text-secondary">{description}</p>}
+      <div className="mt-6">{children}</div>
+    </section>
+  );
+}
+```
+
+**`app/page.tsx`** — `<CatalogShell name="{Project name}" version="0.1">` wrapping one `CatalogGroup` per nav group and one `CatalogSection` per nav item (same `id`). Fill the Foundations now, rendered from the real tokens of `globals.css` (never re-typed values):
+- **Brand** — logo/wordmark at several sizes (or the name set in the display font if there is no logo yet)
+- **Color** — every semantic token as a swatch with its class/variable name and intent; primitive scales below
+- **Typography** — each text style with font, weight and size; the full type scale
+- **Space & shape** — spacing scale as proportional blocks with values, radii, shadow levels with token names
+- **Icons** — a grid of the icon set with labels, naming the library and default size
+- **Motion** — easing and duration tokens, with live demos (button press, tooltip, modal, drawer) that respect `prefers-reduced-motion`
+
+Core and platform sections start with a one-line empty state naming what will live there; `/ds-component` replaces it with the real component. Adjust the font-size classes to the system's type tokens if `/ds-tokens` defined custom ones.
+
+### Phase 8 — Verify
 
 Run `npm run build`. If it fails, fix the cause and build again. Only report a failure if you can't fix it.
 
-### Phase 8 — Final summary
+Check the catalog contract before moving on: the header has the theme toggle, every `nav.ts` item has a matching `CatalogSection` id, and the sidebar collapses into the drawer below `lg`.
+
+### Phase 9 — Final summary
 
 This is the first time the user hears from you since Phase 1. Reply with:
 
@@ -305,6 +548,7 @@ This is the first time the user hears from you since Phase 1. Reply with:
     PROMPT.md            — the main brief to open every work session
     references/          — visual references (add more anytime)
   app/globals.css        — tokens: primitives, semantics, dark mode, shadcn bridge
+  app/page.tsx           — catalog: sidebar navigation, dark/light toggle, foundations
 
 Build: ✓ npm run build passes. Run `npm run dev` to see it.
 

@@ -80,6 +80,8 @@ Build in Next.js (App Router) + TypeScript strict + Tailwind CSS + shadcn/ui. Us
 
 **Output:** A Next.js route at `app/{screen-name}/page.tsx` (kebab-case), with screen-specific pieces in `app/{screen-name}/_components/`. Set the page `metadata.title` to `{project-name} — {screen-name}`.
 
+**Catalog link:** add the screen to the `Screens` group in `components/catalog/nav.ts` (create the group at the end if it doesn't exist) as `{ id: "{screen-name}", label: "{Screen name}", href: "/{screen-name}" }`, so it is reachable from the catalog sidebar. The screen must work in both themes — check it with the catalog's dark/light toggle.
+
 ### Phase 5 — Flag missing components
 
 After delivering the screen, if any component was built inline and does not exist in the design system:
