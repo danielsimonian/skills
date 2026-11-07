@@ -1,6 +1,6 @@
 ---
 name: designsystem
-description: Scaffolds a new design system project from scratch — creates the folder structure, generates a tailored component brief, a visual foundations spec, and a progress tracker. Embeds Emil Kowalski's design engineering philosophy (animation decisions, component polish, performance rules) into every generated document so all future sessions apply them automatically. Only runs when explicitly invoked; it does not trigger on its own.
+description: Scaffolds a new Next.js (App Router + Tailwind + shadcn/ui) design system project from scratch — creates the folder structure, generates a tailored component brief, a visual foundations spec, and a progress tracker. Embeds Emil Kowalski's design engineering philosophy (animation decisions, component polish, performance rules) into every generated document so all future sessions apply them automatically. Only runs when explicitly invoked; it does not trigger on its own.
 ---
 
 # Design System Bootstrap
@@ -21,6 +21,7 @@ A good brief from this skill should answer, without ambiguity: what does this pr
 2. **The component inventory must be product-specific.** Do not copy-paste a generic list. Derive platform-specific components from the brief — an AI chat product needs a prompt field and message bubbles; a fintech needs transaction cards and balance meters.
 3. **Visual language must be derived from references.** If no references are provided, ask. A design system without a visual direction produces inconsistent components.
 4. **Status tracking from the start.** Generate a `STATUS.md` checklist at setup time. Future sessions use it to know what is done and what is next.
+5. **The stack is always Next.js.** Every design system is built in Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui. Do not ask the user to choose a stack and do not fall back to plain HTML/CSS/JS.
 
 ## Workflow
 
@@ -68,7 +69,12 @@ After creating the folder structure, say exactly this:
 A concise context file for future sessions. Include:
 
 - Project name and brief (1–3 sentences)
-- Stack: HTML + CSS + JS as default; Next.js + Tailwind + shadcn/ui if the user specifies a framework
+- Stack (always): Next.js (App Router) + TypeScript strict + Tailwind CSS + shadcn/ui
+  - Tokens live as CSS custom properties in `app/globals.css` and are mapped into the Tailwind theme
+  - shadcn/ui for primitives — restyle them with the system's tokens, never rebuild them from scratch
+  - Components in `components/ui/` (primitives) and `components/platform/` (product-specific)
+  - Catalog page at `app/page.tsx`
+  - `cn()` for conditional classes, `next/image` for images, functional components + hooks only
 - Design system conventions:
   - Dark mode as default
   - CSS custom properties for all tokens (`--color-*`, `--spacing-*`, `--radius-*`, `--font-*`, `--ease-*`)
@@ -179,9 +185,9 @@ Ensure readable contrast and correct behavior with long text and on small screen
 
 Use realistic content in all examples — no lorem ipsum.
 
-If working in code: build reusable components and make interactions work. Simulate AI responses and generation processes without relying on external APIs.
+Build in Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui. Start from shadcn/ui primitives and restyle them with the system's tokens. Map every CSS custom property into the Tailwind theme so components use token-based classes, never hardcoded values.
 
-If working in Figma: use components, variants, properties, and auto layout.
+Make interactions work. Simulate AI responses and generation processes without relying on external APIs.
 
 ---
 
@@ -248,7 +254,7 @@ Before any animation, ask: how often will users see this?
 
 ## CATALOG PAGE
 
-Organize the library into a catalog page divided into:
+Build the catalog at `app/page.tsx` and divide it into:
 Foundations, Core Components, and Platform Components.
 
 Show each component's name, variants, and states.
