@@ -37,19 +37,39 @@ Do NOT ask for local image paths or folder paths at this stage — images are ha
 
 Wait for the reply before proceeding.
 
-### Phase 2a — Generate the folder structure
+### Phase 2a — Scaffold the Next.js app and folder structure
 
-Create the following structure under `~/Documents/Claude/Projects/{project-name}/`:
+From `~/Documents/Claude/Projects/`, create the Next.js app first (it must run in an empty folder). Use the project name in kebab-case for the folder — npm rejects uppercase and spaces:
+
+```bash
+npx create-next-app@latest {project-name} --ts --tailwind --eslint --app --no-src-dir --import-alias "@/*" --use-npm --yes
+cd {project-name}
+npx shadcn@latest init -d
+npm install next-themes zustand
+```
+
+Then add the design system files, so the project ends up as:
 
 ```
 {project-name}/
 ├── CLAUDE.md
 ├── STATUS.md
+├── app/
+│   ├── globals.css        ← token source of truth (filled by /ds-tokens)
+│   ├── layout.tsx
+│   └── page.tsx           ← catalog page
+├── components/
+│   ├── ui/                ← shadcn/ui primitives, restyled with tokens
+│   └── platform/          ← product-specific components
+├── lib/utils.ts           ← cn()
 └── design-system/
     ├── PROMPT.md
+    ├── docs/
     └── references/
         └── .gitkeep
 ```
+
+If `create-next-app` generated its own `CLAUDE.md` or `AGENTS.md`, merge its content into the `CLAUDE.md` written in Phase 3 instead of keeping two files. If any scaffolding command fails, report the error and stop — do not fall back to a non-Next structure.
 
 ### Phase 2b — Request visual references
 
@@ -70,7 +90,8 @@ A concise context file for future sessions. Include:
 
 - Project name and brief (1–3 sentences)
 - Stack (always): Next.js (App Router) + TypeScript strict + Tailwind CSS + shadcn/ui
-  - Tokens live as CSS custom properties in `app/globals.css` and are mapped into the Tailwind theme
+  - Tokens live in `app/globals.css`: primitives on `:root`, semantics in Tailwind v4 `@theme`, dark overrides in `.dark` (via `next-themes`, `defaultTheme="dark"`)
+  - Components use only token-backed Tailwind classes — no arbitrary values (`bg-[#...]`, `p-[13px]`), no default palette (`bg-blue-500`)
   - shadcn/ui for primitives — restyle them with the system's tokens, never rebuild them from scratch
   - Components in `components/ui/` (primitives) and `components/platform/` (product-specific)
   - Catalog page at `app/page.tsx`
@@ -270,6 +291,7 @@ Reply with:
 ```
 {project-name} scaffolded.
 
+  Next.js app            — App Router + TypeScript + Tailwind + shadcn/ui (npm run dev)
   CLAUDE.md              — project context for future sessions
   STATUS.md              — component checklist to track progress
   design-system/

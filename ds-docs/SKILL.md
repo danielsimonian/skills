@@ -20,14 +20,14 @@ Documentation that describes only what the component looks like is useless — t
 1. **Read the component before documenting it.** No invented behaviors, no assumed props.
 2. **Do/Don't examples must be specific.** "Don't overuse" is not a rule. "Don't place more than one primary button per view" is a rule.
 3. **Accessibility notes must include ARIA roles, keyboard keys, and screen reader announcements.** Not just "accessible."
-4. **Props table must match the actual implementation.**
+4. **Props table must match the actual implementation.** Derive it from the component's TypeScript props type and its `cva` variants — not from memory.
 
 ## Workflow
 
 ### Phase 1 — Read
 
 Silently read:
-- The component's implementation
+- The component's implementation — `components/ui/{name}.tsx` or `components/platform/{name}.tsx` (props type, `cva` variants, the shadcn/Radix primitive it wraps)
 - `design-system/PROMPT.md` — design intent
 - `CLAUDE.md` — stack and conventions
 
@@ -59,6 +59,18 @@ Output the documentation in this structure:
 
 - **{Anti-pattern}** — {why it's wrong and what to use instead}
 - **{Anti-pattern}** — {why it's wrong and what to use instead}
+
+---
+
+## Usage
+
+```tsx
+import { {ComponentName} } from "@/components/{ui|platform}/{name}";
+
+<{ComponentName} variant="primary">Realistic label</{ComponentName}>
+```
+
+{If it wraps a shadcn/ui primitive, name it and link the underlying Radix primitive for advanced props.}
 
 ---
 
@@ -103,6 +115,8 @@ Output the documentation in this structure:
 | `Tab` | Move focus forward |
 | `Shift + Tab` | Move focus backward |
 | `Escape` | Close (for overlay components) |
+
+{If built on a Radix primitive, list the keyboard behavior Radix provides — do not invent it.}
 
 **Screen reader:**
 - Role: `{role}` — e.g. `button`, `dialog`, `listbox`, `alertdialog`

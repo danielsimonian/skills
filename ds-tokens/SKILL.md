@@ -1,6 +1,6 @@
 ---
 name: ds-tokens
-description: Designs the full design token architecture — primitive layer, semantic layer, dark/light mode, and motion tokens (Emil Kowalski's easing curves baked in). Produces a single CSS custom properties file that becomes the token source of truth for the entire design system.
+description: Designs the full design token architecture — primitive layer, semantic layer, dark/light mode, and motion tokens (Emil Kowalski's easing curves baked in). Writes them into the Next.js app's `app/globals.css` as Tailwind v4 theme tokens, bridged to shadcn/ui, with dark mode via next-themes — the single token source of truth for the entire design system.
 ---
 
 # Design Token Architecture
@@ -22,12 +22,13 @@ A token system that conflates primitives with semantics (`--blue-500` used in a 
 3. **Dark mode lives in the semantic layer only.** Primitives are brand values that don't change. Only semantics remap.
 4. **Motion tokens are not optional.** Emil's easing curves and duration scale belong in the token system.
 5. **Every token needs a reason.** If two tokens always resolve to the same primitive and serve the same intent, merge them.
+6. **Next.js + Tailwind v4 + shadcn/ui.** Tokens live in `app/globals.css`, semantics are Tailwind theme variables, and shadcn/ui's variables are bridged to them. Never a separate standalone CSS file.
 
 ## Workflow
 
 ### Phase 1 — Read the brief
 
-Read `CLAUDE.md` and `design-system/PROMPT.md` silently. Extract the visual tone, brand colors, and style direction.
+Read `CLAUDE.md`, `design-system/PROMPT.md`, and the current `app/globals.css` silently. Extract the visual tone, brand colors, and style direction. If there is no Next.js app (`package.json` + `app/`), stop and tell the user to run `/designsystem` first.
 
 If no project files exist, ask:
 > To design the token system, I need:
@@ -91,11 +92,23 @@ Raw values. No semantic meaning. Never referenced directly in components.
 }
 ```
 
-### Phase 3 — Semantic layer (light mode default)
+### Phase 3 — Semantic layer (Tailwind v4 `@theme`, light values)
+
+Semantics go inside `@theme` so Tailwind generates utilities from them (`bg-bg-base`, `text-text-primary`, `p-4`, `rounded-md`, `ease-out`). Names follow Tailwind's namespaces: `--color-*`, `--spacing-*`, `--text-*`, `--font-*`, `--font-weight-*`, `--leading-*`, `--radius-*`, `--shadow-*`, `--ease-*`.
+
+`--color-*: initial;` removes Tailwind's default palette, so `bg-blue-500` stops existing and only system colors can be used.
+
+Use plain `@theme` (not `@theme inline`) for anything that changes in dark mode — utilities then reference `var(--color-…)`, and the `.dark` overrides in Phase 4 take effect.
 
 ```css
-/* ─── SEMANTICS ─── intent-based aliases, used in all components ─── */
-:root {
+/* ─── SEMANTICS ─── intent-based, the only tokens components may use ─── */
+@theme {
+  --color-*: initial;
+
+  /* Kept because shadcn/ui overlays use bg-black/50 */
+  --color-black: var(--p-neutral-1000);
+  --color-white: var(--p-neutral-0);
+
   /* Backgrounds */
   --color-bg-base:    var(--p-neutral-50);
   --color-bg-raised:  var(--p-neutral-0);
@@ -108,12 +121,12 @@ Raw values. No semantic meaning. Never referenced directly in components.
   --color-surface-active:  var(--p-neutral-100);
 
   /* Text */
-  --color-text-primary:   var(--p-neutral-950);
-  --color-text-secondary: var(--p-neutral-600);
+  --color-text-primary:     var(--p-neutral-950);
+  --color-text-secondary:   var(--p-neutral-600);
   --color-text-placeholder: var(--p-neutral-400);
-  --color-text-disabled:  var(--p-neutral-400);
-  --color-text-inverse:   var(--p-neutral-0);
-  --color-text-on-action: var(--p-neutral-0);
+  --color-text-disabled:    var(--p-neutral-400);
+  --color-text-inverse:     var(--p-neutral-0);
+  --color-text-on-action:   var(--p-neutral-0);
 
   /* Borders */
   --color-border-default: var(--p-neutral-200);
@@ -121,12 +134,12 @@ Raw values. No semantic meaning. Never referenced directly in components.
   --color-border-focus:   var(--p-brand-500);
 
   /* Actions */
-  --color-action-primary:         var(--p-brand-600);
-  --color-action-primary-hover:   var(--p-brand-700);
-  --color-action-primary-active:  var(--p-brand-800);
-  --color-action-secondary:       var(--p-neutral-100);
-  --color-action-secondary-hover: var(--p-neutral-200);
-  --color-action-ghost-hover:     var(--p-neutral-100);
+  --color-action-primary:           var(--p-brand-600);
+  --color-action-primary-hover:     var(--p-brand-700);
+  --color-action-primary-active:    var(--p-brand-800);
+  --color-action-secondary:         var(--p-neutral-100);
+  --color-action-secondary-hover:   var(--p-neutral-200);
+  --color-action-ghost-hover:       var(--p-neutral-100);
   --color-action-destructive:       var(--p-error-500);
   --color-action-destructive-hover: var(--p-error-600);
 
@@ -140,30 +153,30 @@ Raw values. No semantic meaning. Never referenced directly in components.
   --color-feedback-info:       var(--p-info-500);
   --color-feedback-info-bg:    var(--p-info-50);
 
-  /* Typography */
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  --font-size-xs:  0.75rem;
-  --font-size-sm:  0.875rem;
-  --font-size-md:  1rem;
-  --font-size-lg:  1.125rem;
-  --font-size-xl:  1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
-  --font-size-4xl: 2.25rem;
+  /* Typography — fonts loaded with next/font, exposed as CSS variables */
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --text-xs:  0.75rem;
+  --text-sm:  0.875rem;
+  --text-md:  1rem;
+  --text-lg:  1.125rem;
+  --text-xl:  1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
   --font-weight-regular:  400;
   --font-weight-medium:   500;
   --font-weight-semibold: 600;
   --font-weight-bold:     700;
-  --line-height-tight:   1.25;
-  --line-height-normal:  1.5;
-  --line-height-relaxed: 1.75;
+  --leading-tight:   1.25;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.75;
 
   /* Spacing (4px base) */
-  --space-1: 0.25rem;  --space-2: 0.5rem;   --space-3: 0.75rem;
-  --space-4: 1rem;     --space-5: 1.25rem;  --space-6: 1.5rem;
-  --space-8: 2rem;     --space-10: 2.5rem;  --space-12: 3rem;
-  --space-16: 4rem;    --space-20: 5rem;    --space-24: 6rem;
+  --spacing-1: 0.25rem;  --spacing-2: 0.5rem;   --spacing-3: 0.75rem;
+  --spacing-4: 1rem;     --spacing-5: 1.25rem;  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;     --spacing-10: 2.5rem;  --spacing-12: 3rem;
+  --spacing-16: 4rem;    --spacing-20: 5rem;    --spacing-24: 6rem;
 
   /* Border radius */
   --radius-sm:   4px;
@@ -179,17 +192,20 @@ Raw values. No semantic meaning. Never referenced directly in components.
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.05);
 
-  /* Motion — Emil Kowalski */
+  /* Easing — Emil Kowalski (utilities: ease-out, ease-in-out, ease-drawer) */
   --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Tokens without a Tailwind namespace — use as duration-(--dur-fast), z-(--z-modal) */
+:root {
   --dur-instant: var(--p-dur-instant);
   --dur-fast:    var(--p-dur-fast);
   --dur-normal:  var(--p-dur-normal);
   --dur-slow:    var(--p-dur-slow);
   --dur-drawer:  var(--p-dur-drawer);
 
-  /* Z-index */
   --z-raised:   10;
   --z-dropdown: 100;
   --z-sticky:   200;
@@ -200,61 +216,137 @@ Raw values. No semantic meaning. Never referenced directly in components.
 }
 ```
 
-### Phase 4 — Dark mode
+### Phase 4 — Dark mode (`.dark` class via next-themes)
 
-Only the semantic layer remaps. Primitives stay fixed.
+Only the semantic layer remaps. Primitives stay fixed. Dark is the default theme.
 
 ```css
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg-base:    var(--p-neutral-950);
-    --color-bg-raised:  var(--p-neutral-900);
-    --color-bg-overlay: var(--p-neutral-800);
-    --color-bg-sunken:  var(--p-neutral-1000);
+@custom-variant dark (&:where(.dark, .dark *));
 
-    --color-surface-default: var(--p-neutral-900);
-    --color-surface-hover:   var(--p-neutral-800);
-    --color-surface-active:  var(--p-neutral-700);
+.dark {
+  --color-bg-base:    var(--p-neutral-950);
+  --color-bg-raised:  var(--p-neutral-900);
+  --color-bg-overlay: var(--p-neutral-800);
+  --color-bg-sunken:  var(--p-neutral-1000);
 
-    --color-text-primary:     var(--p-neutral-50);
-    --color-text-secondary:   var(--p-neutral-400);
-    --color-text-placeholder: var(--p-neutral-600);
-    --color-text-disabled:    var(--p-neutral-600);
+  --color-surface-default: var(--p-neutral-900);
+  --color-surface-hover:   var(--p-neutral-800);
+  --color-surface-active:  var(--p-neutral-700);
 
-    --color-border-default: var(--p-neutral-800);
-    --color-border-strong:  var(--p-neutral-600);
+  --color-text-primary:     var(--p-neutral-50);
+  --color-text-secondary:   var(--p-neutral-400);
+  --color-text-placeholder: var(--p-neutral-600);
+  --color-text-disabled:    var(--p-neutral-600);
 
-    --color-action-primary:         var(--p-brand-400);
-    --color-action-primary-hover:   var(--p-brand-300);
-    --color-action-secondary:       var(--p-neutral-800);
-    --color-action-secondary-hover: var(--p-neutral-700);
-    --color-action-ghost-hover:     var(--p-neutral-800);
+  --color-border-default: var(--p-neutral-800);
+  --color-border-strong:  var(--p-neutral-600);
 
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
-  }
+  --color-action-primary:         var(--p-brand-400);
+  --color-action-primary-hover:   var(--p-brand-300);
+  --color-action-secondary:       var(--p-neutral-800);
+  --color-action-secondary-hover: var(--p-neutral-700);
+  --color-action-ghost-hover:     var(--p-neutral-800);
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+}
+```
+
+Wire the theme in `app/layout.tsx`:
+
+```tsx
+import { ThemeProvider } from "next-themes";
+import { Inter, JetBrains_Mono } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" });
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${mono.variable}`}>
+      <body className="bg-bg-base text-text-primary font-sans antialiased">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+Swap the fonts for the ones the visual direction calls for — always through `next/font`.
+
+### Phase 5 — Bridge shadcn/ui to the semantic layer
+
+shadcn/ui components read their own variables (`--background`, `--primary`, `--ring`…). Point them at the semantic tokens so every installed primitive picks up the system automatically — and replace the color block that `shadcn init` generated in `globals.css`:
+
+```css
+:root {
+  --background:             var(--color-bg-base);
+  --foreground:             var(--color-text-primary);
+  --card:                   var(--color-bg-raised);
+  --card-foreground:        var(--color-text-primary);
+  --popover:                var(--color-bg-overlay);
+  --popover-foreground:     var(--color-text-primary);
+  --primary:                var(--color-action-primary);
+  --primary-foreground:     var(--color-text-on-action);
+  --secondary:              var(--color-action-secondary);
+  --secondary-foreground:   var(--color-text-primary);
+  --muted:                  var(--color-bg-sunken);
+  --muted-foreground:       var(--color-text-secondary);
+  --accent:                 var(--color-action-ghost-hover);
+  --accent-foreground:      var(--color-text-primary);
+  --destructive:            var(--color-action-destructive);
+  --border:                 var(--color-border-default);
+  --input:                  var(--color-border-default);
+  --ring:                   var(--color-border-focus);
+  --radius:                 var(--radius-md);
 }
 
-[data-theme="dark"]  { /* same as above */ }
-[data-theme="light"] { /* explicit light values for override */ }
+@theme inline {
+  --color-background:           var(--background);
+  --color-foreground:           var(--foreground);
+  --color-card:                 var(--card);
+  --color-card-foreground:      var(--card-foreground);
+  --color-popover:              var(--popover);
+  --color-popover-foreground:   var(--popover-foreground);
+  --color-primary:              var(--primary);
+  --color-primary-foreground:   var(--primary-foreground);
+  --color-secondary:            var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:                var(--muted);
+  --color-muted-foreground:     var(--muted-foreground);
+  --color-accent:               var(--accent);
+  --color-accent-foreground:    var(--accent-foreground);
+  --color-destructive:          var(--destructive);
+  --color-border:               var(--border);
+  --color-input:                var(--input);
+  --color-ring:                 var(--ring);
+}
 ```
 
-### Phase 5 — Save and advise
+No `.dark` block is needed for the bridge — the shadcn variables resolve through the semantic tokens, which already remap.
 
-Write the token file to `design-system/tokens.css`. Update `STATUS.md`.
+If the project is on Tailwind v3 (`tailwind.config.ts` exists), keep the same `:root` / `.dark` variables and map them in `theme.extend` with `var(--…)` instead of `@theme`, with `darkMode: "class"`.
+
+### Phase 6 — Save and advise
+
+Write everything to `app/globals.css` in this order: `@import "tailwindcss"` → dark variant → primitives (`:root`) → semantics (`@theme`) → non-namespaced tokens (`:root`) → dark overrides (`.dark`) → shadcn bridge. Update `app/layout.tsx` as in Phase 4. Run `npm run build` to confirm it compiles. Update `STATUS.md`.
 
 ```
-Token system saved to design-system/tokens.css.
+Token system saved to app/globals.css.
 
 {n} tokens across 2 layers:
   Primitive: brand scale, neutral scale, feedback, motion durations
   Semantic:  backgrounds, surfaces, text, borders, actions, feedback,
              typography, spacing, radii, shadows, motion, z-index
 
-Dark mode: semantic remap via prefers-color-scheme + [data-theme].
+Dark mode (default): .dark class via next-themes — semantic remap only.
+shadcn/ui: bridged — every installed primitive uses the system tokens.
 
-Rule: components import tokens.css and reference only semantic tokens.
-Never --p-* directly in a component.
+Rule: components use only token-backed Tailwind classes
+(bg-action-primary, text-text-secondary, rounded-md, ease-out).
+Never --p-*, never arbitrary values, never the default palette.
 ```

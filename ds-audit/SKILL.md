@@ -26,6 +26,8 @@ Read silently before anything else:
 - `CLAUDE.md` — stack, conventions, motion rules
 - `design-system/PROMPT.md` — visual language and component inventory
 - `STATUS.md` — which components are marked done
+- `app/globals.css` — the token source of truth (primitives, `@theme` semantics, `.dark` overrides, shadcn bridge)
+- The component files in `components/ui/` and `components/platform/`, plus their catalog entries in `app/page.tsx`
 
 ### Phase 2 — Identify what to audit
 
@@ -48,15 +50,17 @@ For each component in scope, check every category below.
 - [ ] Visible focus ring using `:focus-visible` (not `:focus`)
 - [ ] No positive `tabindex` values
 - [ ] WCAG AA contrast (4.5:1 text, 3:1 UI elements)
-- [ ] Hover states behind `@media (hover: hover) and (pointer: fine)`
+- [ ] Hover in custom CSS behind `@media (hover: hover) and (pointer: fine)` (Tailwind v4 `hover:` already does this)
+- [ ] Radix/shadcn accessibility preserved — no `asChild` misuse, no removed `aria-*` or focus handling from the primitive
 
 #### B — Tokens (no hardcoded values)
-- [ ] No hardcoded colors — only `var(--color-*)`
-- [ ] No hardcoded font sizes — only `var(--font-*)`
-- [ ] No hardcoded spacing — only `var(--spacing-*)`
-- [ ] No hardcoded radii — only `var(--radius-*)`
-- [ ] No hardcoded shadows — only `var(--shadow-*)`
-- [ ] Easing: only `var(--ease-out)`, `var(--ease-in-out)`, `var(--ease-drawer)`
+- [ ] No arbitrary values in `className` — no `bg-[#1a1a2e]`, `p-[13px]`, `rounded-[10px]`, `text-[15px]`
+- [ ] No hex/rgb/px values in `style={{}}` props
+- [ ] Colors only from semantic utilities (`bg-action-primary`, `text-text-secondary`, `border-border-default`) or the shadcn bridge (`bg-primary`, `ring-ring`)
+- [ ] No primitives (`--p-*`) referenced in components
+- [ ] Spacing, radii, shadows, font sizes from the theme scale (`p-4`, `rounded-md`, `shadow-lg`, `text-sm`)
+- [ ] Easing only `ease-out`, `ease-in-out`, `ease-drawer`; durations via `duration-(--dur-*)`
+- [ ] New tokens added to `app/globals.css`, not invented inline
 
 #### C — States
 - [ ] `default` present and correct
@@ -78,23 +82,32 @@ For each component in scope, check every category below.
 - [ ] Only `transform` and `opacity` animated
 
 #### E — Composition and responsiveness
-- [ ] Larger components use existing pieces (no duplicated markup)
-- [ ] No hardcoded inline CSS inside composed components
+- [ ] Larger components import existing pieces from `components/ui/` and `components/platform/` (no duplicated markup)
+- [ ] shadcn/ui primitives used where they exist — not rebuilt from scratch
 - [ ] Works at 320px without horizontal overflow
+
+#### F — Next.js / React
+- [ ] TypeScript strict: props typed, no `any`
+- [ ] Variants defined with `cva`, conditional classes with `cn()` — no string concatenation
+- [ ] `"use client"` only on components that need state, effects, or event handlers
+- [ ] Images via `next/image`, fonts via `next/font`
+- [ ] Functional components + hooks only; shared state in Zustand, no prop drilling
+- [ ] `npm run build` and `npm run lint` pass
 
 ### Phase 4 — Output the findings
 
-Format every violation as a Before/After table per component, ordered A → E:
+Format every violation as a Before/After table per component, ordered A → F:
 
 ```markdown
 ## Audit — {component name}
 
 | Category | Before | After | Why |
 |---|---|---|---|
-| Accessibility | `<button disabled>` | `<button disabled aria-disabled="true">` | `disabled` alone isn't announced by all screen readers |
-| Token | `color: #1a1a2e` | `color: var(--color-text-primary)` | Hardcoded value breaks theming and dark mode |
-| Motion | `transition: all 200ms ease-in` | `transition: transform 160ms var(--ease-out)` | `all` animates unnecessary properties; `ease-in` starts slow and feels sluggish |
-| State | No `focus-visible` | `outline: 2px solid var(--color-border-focus)` on `:focus-visible` | Keyboard users have no visual focus indication |
+| Accessibility | `<Button disabled>` | `<Button disabled aria-disabled="true">` | `disabled` alone isn't announced by all screen readers |
+| Token | `className="text-[#1a1a2e]"` | `className="text-text-primary"` | Arbitrary value breaks theming and dark mode |
+| Motion | `transition-all duration-200 ease-in` | `transition-transform duration-(--dur-fast) ease-out` | `all` animates unnecessary properties; `ease-in` starts slow and feels sluggish |
+| State | No focus style | `focus-visible:ring-2 focus-visible:ring-ring` | Keyboard users have no visual focus indication |
+| Next.js | `"use client"` on a static card | Remove the directive | Ships unnecessary JS to the client |
 ```
 
 If no violations: `{component name}: no violations found.`
@@ -107,7 +120,7 @@ AUDIT SUMMARY
 
 Immediate (accessibility): {list}
 High priority (tokens, states): {list}
-Normal (motion, composition): {list}
+Normal (motion, composition, Next.js): {list}
 ```
 
 Offer to fix violations starting with the highest priority.
