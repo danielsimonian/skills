@@ -30,13 +30,15 @@ Ask the user for the following **in a single message**:
 
 1. **Project name** — the name of the product or design system
 2. **Product brief** — 2–5 sentences: what it is, who uses it, the visual tone or style direction you have in mind
-3. **Visual references** — links (Figma, Dribbble, Behance, product sites) and/or a path to a local folder with reference images. If nothing yet, say so.
+3. **Reference links** — URLs only (Figma, Dribbble, Behance, product sites, any visual reference you can paste). If none yet, say so.
+
+Do NOT ask for local image paths or folder paths at this stage — images are handled in Phase 2b.
 
 Wait for the reply before proceeding.
 
-### Phase 2 — Generate the folder structure
+### Phase 2a — Generate the folder structure
 
-Create the following structure in the current working directory (or a `{project-name}/` subfolder if the directory is not empty):
+Create the following structure under `~/Documents/Claude/Projects/{project-name}/`:
 
 ```
 {project-name}/
@@ -47,6 +49,19 @@ Create the following structure in the current working directory (or a `{project-
     └── references/
         └── .gitkeep
 ```
+
+### Phase 2b — Request visual references
+
+After creating the folder structure, say exactly this:
+
+> Folder created at `Documents/Claude/Projects/{project-name}/`.
+>
+> Now drop your visual references (screenshots, existing identity, moodboard, UI inspiration) into:
+> **`Documents/Claude/Projects/{project-name}/design-system/references/`**
+>
+> Anything works: UI screenshots, color palettes, logos, mood photos, competitor products. Let me know when you've added everything.
+
+**Wait for the user to confirm before proceeding to Phase 3.** Do not continue until they say they are done.
 
 ### Phase 3 — Write CLAUDE.md
 
