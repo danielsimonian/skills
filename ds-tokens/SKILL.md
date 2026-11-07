@@ -30,7 +30,7 @@ A token system that conflates primitives with semantics (`--blue-500` used in a 
 
 Read `CLAUDE.md`, `design-system/PROMPT.md`, and the current `app/globals.css` silently. Extract the visual tone, brand colors, and style direction. If there is no Next.js app (`package.json` + `app/`), stop and tell the user to run `/designsystem` first.
 
-If no project files exist, ask:
+If it was invoked from `/designsystem`, do not ask anything — the brief is already in the project files. If it was run on its own and no project files exist, ask:
 > To design the token system, I need:
 > 1. **Brand color** — hex, name, or tone description
 > 2. **Visual tone** — e.g. "minimal dark", "vibrant consumer", "neutral enterprise"

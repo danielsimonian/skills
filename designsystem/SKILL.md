@@ -17,9 +17,9 @@ A good brief from this skill should answer, without ambiguity: what does this pr
 
 ## Hard Rules
 
-1. **Never start building until the brief is confirmed.** The purpose of this skill is scaffolding, not implementation. If the user wants to start building immediately, hand off to `/ds-component` or `/ds-screen`.
+1. **Run the whole flow without stopping.** After the brief is collected (Phase 1), execute every phase through to the end — scaffold, documents, tokens, build check — with no confirmation questions, no "shall I continue?", no waiting for files. Make reasonable decisions on your own and list them in the final summary; the user reviews and changes things once everything is ready. The only valid reasons to stop are a missing project name/brief or a command that fails.
 2. **The component inventory must be product-specific.** Do not copy-paste a generic list. Derive platform-specific components from the brief — an AI chat product needs a prompt field and message bubbles; a fintech needs transaction cards and balance meters.
-3. **Visual language must be derived from references.** If no references are provided, ask. A design system without a visual direction produces inconsistent components.
+3. **Visual language comes from references when they exist, from the brief when they don't.** Use links, images and the tone described in the brief. If there are no references, infer a coherent direction from the brief and record it as an assumption in the final summary — never stop to ask.
 4. **Status tracking from the start.** Generate a `STATUS.md` checklist at setup time. Future sessions use it to know what is done and what is next.
 5. **The stack is always Next.js.** Every design system is built in Next.js (App Router) + TypeScript + Tailwind CSS + shadcn/ui. Do not ask the user to choose a stack and do not fall back to plain HTML/CSS/JS.
 
@@ -27,15 +27,19 @@ A good brief from this skill should answer, without ambiguity: what does this pr
 
 ### Phase 1 — Collect the brief
 
-Ask the user for the following **in a single message**:
+If the user already gave a project name and brief together with the command (e.g. `/designsystem Orbit — AI chat app for…`), skip this phase entirely and start Phase 2a.
 
-1. **Project name** — the name of the product or design system
-2. **Product brief** — 2–5 sentences: what it is, who uses it, the visual tone or style direction you have in mind
-3. **Reference links** — URLs only (Figma, Dribbble, Behance, product sites, any visual reference you can paste). If none yet, say so.
+Otherwise, ask **once**, in a single message — this is the only question the skill asks:
 
-Do NOT ask for local image paths or folder paths at this stage — images are handled in Phase 2b.
+> To set up the design system, send me in one message:
+>
+> 1. **Project name**
+> 2. **Product brief** — 2–5 sentences: what it is, who uses it, the visual tone you have in mind
+> 3. **References** (optional) — links (Figma, Dribbble, sites) and/or the path of a folder with images
+>
+> After that I'll run the whole flow without stopping — you review and adjust at the end.
 
-Wait for the reply before proceeding.
+Wait for this one reply. Missing references are fine; never ask a follow-up.
 
 ### Phase 2a — Scaffold the Next.js app and folder structure
 
@@ -71,18 +75,13 @@ Then add the design system files, so the project ends up as:
 
 If `create-next-app` generated its own `CLAUDE.md` or `AGENTS.md`, merge its content into the `CLAUDE.md` written in Phase 3 instead of keeping two files. If any scaffolding command fails, report the error and stop — do not fall back to a non-Next structure.
 
-### Phase 2b — Request visual references
+### Phase 2b — Gather visual references (no waiting)
 
-After creating the folder structure, say exactly this:
+- If the user gave a folder of images, copy them into `design-system/references/` and look at them.
+- If they gave links, fetch them when possible and extract colors, typography, density and tone.
+- If there are no references, derive the direction from the brief.
 
-> Folder created at `Documents/Claude/Projects/{project-name}/`.
->
-> Now drop your visual references (screenshots, existing identity, moodboard, UI inspiration) into:
-> **`Documents/Claude/Projects/{project-name}/design-system/references/`**
->
-> Anything works: UI screenshots, color palettes, logos, mood photos, competitor products. Let me know when you've added everything.
-
-**Wait for the user to confirm before proceeding to Phase 3.** Do not continue until they say they are done.
+Continue straight to Phase 3. Do not ask the user to add files and do not wait.
 
 ### Phase 3 — Write CLAUDE.md
 
@@ -284,19 +283,36 @@ The page should let you compare pieces and serve as a reference for building scr
 
 Adapt **Platform Components** to this product specifically.
 
-### Phase 6 — Confirm
+### Phase 6 — Run /ds-tokens
 
-Reply with:
+Without asking, execute the `ds-tokens` skill immediately in the same session, using the brief and references already collected. Skip its own questions — everything it needs is in `CLAUDE.md` and `PROMPT.md`.
+
+### Phase 7 — Verify
+
+Run `npm run build`. If it fails, fix the cause and build again. Only report a failure if you can't fix it.
+
+### Phase 8 — Final summary
+
+This is the first time the user hears from you since Phase 1. Reply with:
 
 ```
-{project-name} scaffolded.
+{project-name} is ready.
 
   Next.js app            — App Router + TypeScript + Tailwind + shadcn/ui (npm run dev)
   CLAUDE.md              — project context for future sessions
   STATUS.md              — component checklist to track progress
   design-system/
     PROMPT.md            — the main brief to open every work session
-    references/          — drop your visual references here
+    references/          — visual references (add more anytime)
+  app/globals.css        — tokens: primitives, semantics, dark mode, shadcn bridge
+
+Build: ✓ npm run build passes. Run `npm run dev` to see it.
+
+Decisions I made (change any of them):
+  - Visual direction: {one line — derived from references or inferred from the brief}
+  - Brand color: {value and why}
+  - Fonts: {font pair and why}
+  - Platform components: {n} items — {short list}
 
 ──────────────────────────────────────────
 Full workflow (skills in recommended order):
@@ -324,6 +340,4 @@ Full workflow (skills in recommended order):
 ──────────────────────────────────────────
 ```
 
-Then offer: **"Ready to start now? I can run `/ds-tokens` to design the token architecture before any component."**
-
-If yes, execute the `ds-tokens` skill immediately in the same session.
+End with one line: **"Tell me what you want to change, or start building components with `/ds-component`."**
