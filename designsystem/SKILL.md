@@ -256,22 +256,28 @@ Reply with:
     references/          — drop your visual references here
 
 ──────────────────────────────────────────
-Recommended workflow (run skills in this order):
+Full workflow (skills in recommended order):
 
-  /ds-tokens      → design the token architecture before any component
-                    (primitive → semantic layers, dark mode, Emil's motion tokens)
+  FOUNDATION
+  /ds-tokens           → token architecture before any component
+                         (primitive → semantic layers, dark mode, Emil's motion tokens)
 
-  /ds-component   → build each component using the established tokens
+  PER COMPONENT (repeat for each one)
+  prototype            → explore 3 different directions before committing to one
+  /ds-component        → build the component using established tokens
+  break-ui             → stress-test with extreme data: long names, empty lists,
+                         huge numbers, missing fields
+  review-animations    → strict animation audit (Before/After table)
+  /ds-audit            → full audit: tokens, states, accessibility
+  /ds-docs             → document: when to use, props, ARIA, keyboard, do/don't
 
-  /ds-audit       → audit components: tokens, states, motion, accessibility
-                    (Before/After table output, prioritized by impact)
+  SCREENS
+  /ds-screen           → assemble a full screen from the system's pieces
+  choreograph          → coordinate elements that animate together on screen
+  mobile-native        → fix classic mobile web issues
 
-  /ds-docs        → document each component
-                    (when to use, props, ARIA, keyboard, do/don't)
-
-  /ds-screen      → assemble full screens from the system's pieces
-
-  /ds-status      → track and update progress across sessions
+  PROGRESS
+  /ds-status           → track and update the checklist across sessions
 ──────────────────────────────────────────
 ```
 
