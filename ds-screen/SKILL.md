@@ -61,7 +61,7 @@ Before writing any code, map:
 
 ### Phase 4 — Build the screen
 
-**Composition first:** Every piece that exists in the design system must come from it. Use the established markup structure and CSS custom properties.
+**Composition first:** Every piece that exists in the design system must come from it — import from `components/ui/` and `components/platform/`. Use the token-based Tailwind classes; no hardcoded values.
 
 **Layout:** Use CSS grid or flex. The screen must reflow correctly at mobile width (375px minimum). No horizontal overflow.
 
@@ -74,11 +74,11 @@ Before writing any code, map:
 - Form submission → success state (if present)
 - Any action specific to the scenario
 
-Use vanilla JS unless the project stack specifies a framework.
+Build in Next.js (App Router) + TypeScript strict + Tailwind CSS + shadcn/ui. Use React hooks for local state and Zustand for state shared across the screen. Mark the page or interactive parts with `"use client"` only where needed.
 
 **Animations:** Subtle entrance on load, micro-interactions on state changes. Keep them under 300ms for UI feedback, up to 500ms for layout transitions. `ease-out` for entrances. Always check `prefers-reduced-motion`.
 
-**Output:** A self-contained HTML artifact. Title: `{project-name} — {screen-name}`.
+**Output:** A Next.js route at `app/{screen-name}/page.tsx` (kebab-case), with screen-specific pieces in `app/{screen-name}/_components/`. Set the page `metadata.title` to `{project-name} — {screen-name}`.
 
 ### Phase 5 — Flag missing components
 

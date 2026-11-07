@@ -59,9 +59,11 @@ Wait for the reply.
 
 **Realistic content:** No lorem ipsum. No "Title goes here". Use plausible, product-shaped copy in all examples.
 
+**Stack:** Next.js (App Router) + TypeScript strict + Tailwind CSS + shadcn/ui. If the component has a shadcn/ui primitive (Button, Dialog, Select, Tooltip…), add it with `npx shadcn@latest add {name}` and restyle it with the system's tokens — never rebuild it from scratch. Use Tailwind classes mapped to the CSS custom properties, `cn()` for conditional classes, and `cva` for variants. No hardcoded values, no `any`.
+
 **Output format:**
-- In code: a self-contained HTML artifact showing all variants and states side-by-side. CSS scoped to the component. Interactions functional.
-- In Figma: component structure with variants, properties, and auto layout instructions.
+- The component file: `components/ui/{name}.tsx` for core primitives, `components/platform/{name}.tsx` for product-specific components. Typed props, variants via `cva`, interactions functional.
+- A catalog entry in `app/page.tsx` showing all variants and states side by side.
 
 ### Phase 4 — Update STATUS.md
 
